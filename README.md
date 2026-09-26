@@ -32,3 +32,16 @@ Chat uses a small WebSocket server (`server/chat-server.cjs`). Everyone on a tou
 - **Host centrally**: run `npm run chat-server` (`PORT` env var, default 4455) on any reachable machine, ideally behind TLS (`wss://`).
 
 Messages are kept (last 500 per room) in `chat-history.json`.
+
+## MCP servers
+
+`.mcp.json` configures project MCP servers that Claude Code loads when you open this repo (approve them when prompted):
+
+| Server | Use |
+| --- | --- |
+| `playwright` | Lets Claude drive and test the UI (`npm run dev:web`, then point it at http://localhost:5173). |
+| `context7` | Up-to-date docs for Electron, React, Vite, etc. |
+| `google-maps` | Geocoding, drive times/distances between cities for routing. Needs `GOOGLE_MAPS_API_KEY` in your environment. |
+| `weather` | Open-Meteo forecasts for show and drive days (no key needed). |
+
+Account connectors (Google Calendar, Gmail, Google Drive, Dropbox, Slack, DocuSign, QuickBooks/Xero, Supabase) are connected per user at claude.ai → Settings → Connectors rather than in this repo.

@@ -45,3 +45,7 @@ Messages are kept (last 500 per room) in `chat-history.json`.
 | `weather` | Open-Meteo forecasts for show and drive days (no key needed). |
 
 Account connectors (Google Calendar, Gmail, Google Drive, Dropbox, Slack, DocuSign, QuickBooks/Xero, Supabase) are connected per user at claude.ai → Settings → Connectors rather than in this repo.
+
+## Supabase backend (in progress)
+
+`supabase/migrations/` holds the schema for the multi-user version: profiles, tours, tour members with roles (owner / manager / crew / viewer), email invites, all tour data, chat messages, and a private `tour-documents` storage bucket. Row-level security means people only ever see tours they belong to, crew and viewers can't see money, and removing someone cuts off their access immediately. Create tours with the `create_tour()` function and join with `accept_tour_invite()`.

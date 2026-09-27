@@ -8,6 +8,8 @@ const dataDir = () => app.getPath('userData');
 const dataFile = () => path.join(dataDir(), 'tour-time-data.json');
 const docsDir = () => path.join(dataDir(), 'documents');
 
+const SAFE_EXTERNAL = /^(https?|mailto|tel):/i;
+
 let mainWindow = null;
 let chatServer = null;
 
@@ -32,10 +34,18 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
 
-  // Open external links in the user's browser rather than inside the app.
+  // Open external links in the user's browser rather than inside the app. Only web, email and
+  // phone links: openExternal on file:// or custom protocols can launch programs.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (SAFE_EXTERNAL.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  // The app window never navigates away from the app itself.
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    if (url.split('#')[0] === mainWindow.webContents.getURL().split('#')[0]) return;
+    e.preventDefault();
+    if (SAFE_EXTERNAL.test(url)) shell.openExternal(url);
   });
 }
 

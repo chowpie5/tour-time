@@ -5,6 +5,8 @@ const path = require('path');
 const { WebSocketServer } = require('ws');
 
 const MAX_HISTORY = 500;
+const MAX_ROOMS = 200; // caps disk use from made-up room codes
+const MAX_PAYLOAD = 16 * 1024; // a 4000-char message fits comfortably
 
 function createChatServer({ port = 4455, dataDir } = {}) {
   const historyFile = dataDir ? path.join(dataDir, 'chat-history.json') : null;
@@ -27,7 +29,7 @@ function createChatServer({ port = 4455, dataDir } = {}) {
     }, 250);
   }
 
-  const wss = new WebSocketServer({ port });
+  const wss = new WebSocketServer({ port, maxPayload: MAX_PAYLOAD });
   const rooms = new Map(); // tourId -> Set<ws>
 
   function send(ws, payload) {
@@ -55,6 +57,8 @@ function createChatServer({ port = 4455, dataDir } = {}) {
   }
 
   wss.on('connection', (ws) => {
+    // Oversized or malformed frames emit 'error'; unhandled, that would crash the host app.
+    ws.on('error', () => ws.terminate());
     ws.on('message', (raw) => {
       let msg;
       try {
@@ -62,7 +66,7 @@ function createChatServer({ port = 4455, dataDir } = {}) {
       } catch {
         return;
       }
-      if (msg.type === 'join' && typeof msg.tourId === 'string') {
+      if (msg.type === 'join' && typeof msg.tourId === 'string' && msg.tourId.length <= 100) {
         leave(ws);
         ws.tourId = msg.tourId;
         ws.user = String(msg.user || 'Anonymous').slice(0, 60);
@@ -73,6 +77,7 @@ function createChatServer({ port = 4455, dataDir } = {}) {
       } else if (msg.type === 'message' && ws.tourId && typeof msg.text === 'string') {
         const text = msg.text.trim().slice(0, 4000);
         if (!text) return;
+        if (!history[ws.tourId] && Object.keys(history).length >= MAX_ROOMS) return;
         const message = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           user: ws.user,
